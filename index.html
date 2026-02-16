@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>VR Landscape - Meta Quest</title>
+    <meta name="description" content="Simple VR landscape with tree for Meta Quest">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <!-- Environment: forest preset -->
+      <a-entity environment="preset: forest; skyType: atmosphere; lighting: distant"></a-entity>
+      
+      <!-- Custom Tree -->
+      <a-entity position="0 0 -8">
+        <!-- Trunk -->
+        <a-cylinder 
+          position="0 1.5 0" 
+          radius="0.3" 
+          height="3" 
+          color="#5D4037"
+          shadow="cast: true">
+        </a-cylinder>
+        
+        <!-- Foliage - multiple spheres for a fuller tree -->
+        <a-sphere position="0 3.5 0" radius="1.5" color="#2E7D32" shadow="cast: true; receive: true"></a-sphere>
+        <a-sphere position="-0.8 3 0.5" radius="1" color="#388E3C" shadow="cast: true; receive: true"></a-sphere>
+        <a-sphere position="0.7 3.2 -0.3" radius="1.1" color="#43A047" shadow="cast: true; receive: true"></a-sphere>
+        <a-sphere position="0 4.2 0" radius="1.2" color="#2E7D32" shadow="cast: true; receive: true"></a-sphere>
+      </a-entity>
+      
+      <!-- Second Tree -->
+      <a-entity position="6 0 -10">
+        <a-cylinder position="0 1.5 0" radius="0.25" height="3" color="#5D4037" shadow="cast: true"></a-cylinder>
+        <a-sphere position="0 3.5 0" radius="1.3" color="#1B5E20" shadow="cast: true"></a-sphere>
+        <a-sphere position="0 4.3 0" radius="1" color="#2E7D32" shadow="cast: true"></a-sphere>
+      </a-entity>
+      
+      <!-- Ground plane for shadows -->
+      <a-plane 
+        rotation="-90 0 0" 
+        width="100" 
+        height="100" 
+        color="#1B5E20" 
+        shadow="receive: true"
+        visible="false">
+      </a-plane>
+      
+      <!-- Lighting -->
+      <a-light type="directional" position="-1 1 1" intensity="0.8" cast-shadow="true"></a-light>
+      <a-light type="ambient" intensity="0.4"></a-light>
+      
+      <!-- Camera with VR controls -->
+      <a-entity id="rig" position="0 0 5">
+        <a-camera position="0 1.6 0" look-controls wasd-controls>
+          <a-cursor color="white" fuse="false"></a-cursor>
+        </a-camera>
+        
+        <!-- Hand controllers -->
+        <a-entity 
+          oculus-touch-controls="hand: left"
+          laser-controls="hand: left"
+          raycaster="objects: .clickable; far: 2">
+        </a-entity>
+        <a-entity 
+          oculus-touch-controls="hand: right"
+          laser-controls="hand: right"
+          raycaster="objects: .clickable; far: 2">
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
