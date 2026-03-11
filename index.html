@@ -163,7 +163,10 @@
           if (!input.active) return;
 
           const camera = document.getElementById('player-camera');
-          const yaw = camera.object3D.rotation.y;
+          const playerObject = this.el.object3D;
+          const playerRotationY = playerObject.rotation.y;
+          const cameraRotationY = camera.object3D.rotation.y;
+          const yaw = playerRotationY + cameraRotationY;
           const forwardX = -Math.sin(yaw);
           const forwardZ = -Math.cos(yaw);
           const rightX = Math.cos(yaw);
@@ -175,8 +178,14 @@
           const nx = moveX / moveLength;
           const nz = moveZ / moveLength;
 
-          this.el.object3D.position.x += nx * this.data.speed * delta;
-          this.el.object3D.position.z += nz * this.data.speed * delta;
+          const nextX = playerObject.position.x + nx * this.data.speed * delta;
+          const nextZ = playerObject.position.z + nz * this.data.speed * delta;
+          playerObject.position.set(nextX, playerObject.position.y, nextZ);
+          this.el.setAttribute('position', {
+            x: nextX,
+            y: playerObject.position.y,
+            z: nextZ
+          });
 
           if (!this.isVR) {
             const targetYaw = Math.atan2(nx, nz);
