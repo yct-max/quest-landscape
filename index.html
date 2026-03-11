@@ -200,12 +200,12 @@
           window.questLandscapeInput.moveY = 0;
         }
 
-        function updateJoystickFromEvent(event) {
+        function updateJoystick(clientX, clientY) {
           const rect = zone.getBoundingClientRect();
           const centerX = rect.left + rect.width / 2;
           const centerY = rect.top + rect.height / 2;
-          let dx = event.clientX - centerX;
-          let dy = event.clientY - centerY;
+          let dx = clientX - centerX;
+          let dy = clientY - centerY;
           const length = Math.hypot(dx, dy);
           if (length > radius) {
             dx = (dx / length) * radius;
@@ -214,32 +214,63 @@
           setJoystick(dx, dy);
         }
 
+        function applyLookDelta(dx, dy) {
+          const playerObj = player.object3D;
+          playerObj.rotation.y -= dx * 0.01;
+          pitch = Math.max(-0.9, Math.min(0.7, pitch - dy * 0.01));
+          camera.object3D.rotation.x = pitch;
+        }
+
         zone.addEventListener('pointerdown', (event) => {
           joystickPointerId = event.pointerId;
-          zone.setPointerCapture(event.pointerId);
-          updateJoystickFromEvent(event);
+          if (zone.setPointerCapture) zone.setPointerCapture(event.pointerId);
+          updateJoystick(event.clientX, event.clientY);
           instructions.textContent = 'Left thumb: move · Right side: look';
         });
 
         zone.addEventListener('pointermove', (event) => {
           if (event.pointerId !== joystickPointerId) return;
-          updateJoystickFromEvent(event);
+          updateJoystick(event.clientX, event.clientY);
         });
 
         function releaseJoystick(event) {
-          if (event.pointerId !== joystickPointerId) return;
+          if (event && event.pointerId !== undefined && event.pointerId !== joystickPointerId) return;
           joystickPointerId = null;
           resetJoystick();
         }
 
         zone.addEventListener('pointerup', releaseJoystick);
         zone.addEventListener('pointercancel', releaseJoystick);
-        zone.addEventListener('pointerleave', releaseJoystick);
+
+        zone.addEventListener('touchstart', (event) => {
+          const touch = event.changedTouches[0];
+          if (!touch) return;
+          event.preventDefault();
+          updateJoystick(touch.clientX, touch.clientY);
+          instructions.textContent = 'Left thumb: move · Right side: look';
+        }, { passive: false });
+
+        zone.addEventListener('touchmove', (event) => {
+          const touch = event.changedTouches[0];
+          if (!touch) return;
+          event.preventDefault();
+          updateJoystick(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        zone.addEventListener('touchend', (event) => {
+          event.preventDefault();
+          releaseJoystick();
+        }, { passive: false });
+
+        zone.addEventListener('touchcancel', (event) => {
+          event.preventDefault();
+          releaseJoystick();
+        }, { passive: false });
 
         lookZone.addEventListener('pointerdown', (event) => {
           if (scene.is('vr-mode')) return;
           lookPointerId = event.pointerId;
-          lookZone.setPointerCapture(event.pointerId);
+          if (lookZone.setPointerCapture) lookZone.setPointerCapture(event.pointerId);
           lookActive = true;
           lastLookX = event.clientX;
           lastLookY = event.clientY;
@@ -251,22 +282,49 @@
           const dy = event.clientY - lastLookY;
           lastLookX = event.clientX;
           lastLookY = event.clientY;
-
-          const playerObj = player.object3D;
-          playerObj.rotation.y -= dx * 0.01;
-
-          pitch = Math.max(-0.9, Math.min(0.7, pitch - dy * 0.01));
-          camera.object3D.rotation.x = pitch;
+          applyLookDelta(dx, dy);
         });
 
         function releaseLook(event) {
-          if (event.pointerId !== lookPointerId) return;
+          if (event && event.pointerId !== undefined && event.pointerId !== lookPointerId) return;
           lookActive = false;
           lookPointerId = null;
         }
 
         lookZone.addEventListener('pointerup', releaseLook);
         lookZone.addEventListener('pointercancel', releaseLook);
+
+        lookZone.addEventListener('touchstart', (event) => {
+          if (scene.is('vr-mode')) return;
+          const touch = event.changedTouches[0];
+          if (!touch) return;
+          event.preventDefault();
+          lookActive = true;
+          lastLookX = touch.clientX;
+          lastLookY = touch.clientY;
+        }, { passive: false });
+
+        lookZone.addEventListener('touchmove', (event) => {
+          if (!lookActive || scene.is('vr-mode')) return;
+          const touch = event.changedTouches[0];
+          if (!touch) return;
+          event.preventDefault();
+          const dx = touch.clientX - lastLookX;
+          const dy = touch.clientY - lastLookY;
+          lastLookX = touch.clientX;
+          lastLookY = touch.clientY;
+          applyLookDelta(dx, dy);
+        }, { passive: false });
+
+        lookZone.addEventListener('touchend', (event) => {
+          event.preventDefault();
+          releaseLook();
+        }, { passive: false });
+
+        lookZone.addEventListener('touchcancel', (event) => {
+          event.preventDefault();
+          releaseLook();
+        }, { passive: false });
 
         scene.addEventListener('enter-vr', () => {
           document.getElementById('hud').classList.add('hidden');
