@@ -81,6 +81,21 @@
         touch-action: none;
       }
 
+      #debug-panel {
+        position: absolute;
+        right: max(14px, env(safe-area-inset-right, 0px));
+        bottom: max(14px, env(safe-area-inset-bottom, 0px));
+        min-width: 180px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.55);
+        color: #d7ffd9;
+        font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre-line;
+        backdrop-filter: blur(8px);
+        pointer-events: none;
+      }
+
       .hidden {
         display: none !important;
       }
@@ -92,7 +107,7 @@
       }
     </style>
     <script>
-      window.questLandscapeInput = { moveX: 0, moveY: 0 };
+      window.questLandscapeInput = { moveX: 0, moveY: 0, source: 'idle', touching: false };
 
       AFRAME.registerComponent('player-controller', {
         schema: {
@@ -180,6 +195,7 @@
         const player = document.getElementById('player');
         const camera = document.getElementById('player-camera');
         const instructions = document.getElementById('instructions');
+        const debugPanel = document.getElementById('debug-panel');
         const radius = 48;
         let joystickPointerId = null;
         let lookPointerId = null;
@@ -188,16 +204,19 @@
         let lastLookY = 0;
         let pitch = 0;
 
-        function setJoystick(x, y) {
+        function setJoystick(x, y, source = 'unknown') {
           knob.style.transform = `translate(${x}px, ${y}px)`;
           window.questLandscapeInput.moveX = x / radius;
           window.questLandscapeInput.moveY = -y / radius;
+          window.questLandscapeInput.source = source;
         }
 
         function resetJoystick() {
           knob.style.transform = 'translate(0px, 0px)';
           window.questLandscapeInput.moveX = 0;
           window.questLandscapeInput.moveY = 0;
+          window.questLandscapeInput.touching = false;
+          window.questLandscapeInput.source = 'idle';
         }
 
         function updateJoystick(clientX, clientY) {
@@ -211,7 +230,7 @@
             dx = (dx / length) * radius;
             dy = (dy / length) * radius;
           }
-          setJoystick(dx, dy);
+          setJoystick(dx, dy, 'calc');
         }
 
         function applyLookDelta(dx, dy) {
@@ -224,6 +243,8 @@
         zone.addEventListener('pointerdown', (event) => {
           joystickPointerId = event.pointerId;
           if (zone.setPointerCapture) zone.setPointerCapture(event.pointerId);
+          window.questLandscapeInput.touching = true;
+          window.questLandscapeInput.source = 'pointer';
           updateJoystick(event.clientX, event.clientY);
           instructions.textContent = 'Left thumb: move · Right side: look';
         });
@@ -246,6 +267,8 @@
           const touch = event.changedTouches[0];
           if (!touch) return;
           event.preventDefault();
+          window.questLandscapeInput.touching = true;
+          window.questLandscapeInput.source = 'touch';
           updateJoystick(touch.clientX, touch.clientY);
           instructions.textContent = 'Left thumb: move · Right side: look';
         }, { passive: false });
@@ -254,6 +277,8 @@
           const touch = event.changedTouches[0];
           if (!touch) return;
           event.preventDefault();
+          window.questLandscapeInput.touching = true;
+          window.questLandscapeInput.source = 'touch';
           updateJoystick(touch.clientX, touch.clientY);
         }, { passive: false });
 
@@ -326,6 +351,23 @@
           releaseLook();
         }, { passive: false });
 
+        function updateDebug() {
+          const pos = player.object3D.position;
+          const input = window.questLandscapeInput;
+          const moving = Math.hypot(input.moveX, input.moveY) > 0.02 ? 'yes' : 'no';
+          debugPanel.textContent = [
+            `src: ${input.source}`,
+            `touching: ${input.touching ? 'yes' : 'no'}`,
+            `moveX: ${input.moveX.toFixed(2)}`,
+            `moveY: ${input.moveY.toFixed(2)}`,
+            `moving: ${moving}`,
+            `player: ${pos.x.toFixed(2)}, ${pos.z.toFixed(2)}`
+          ].join('\n');
+          requestAnimationFrame(updateDebug);
+        }
+
+        updateDebug();
+
         scene.addEventListener('enter-vr', () => {
           document.getElementById('hud').classList.add('hidden');
         });
@@ -346,6 +388,7 @@
         <div id="joystick-knob"></div>
       </div>
       <div id="look-zone" aria-hidden="true"></div>
+      <div id="debug-panel">debug loading…</div>
     </div>
 
     <a-scene shadow="type: pcfsoft" renderer="colorManagement: true; physicallyCorrectLights: true">
