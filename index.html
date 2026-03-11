@@ -109,92 +109,6 @@
     <script>
       window.questLandscapeInput = { moveX: 0, moveY: 0, source: 'idle', touching: false };
 
-      AFRAME.registerComponent('player-controller', {
-        schema: {
-          speed: { default: 3.6 },
-          turnSmoothing: { default: 10 }
-        },
-
-        init: function () {
-          this.keys = {};
-          this.isVR = false;
-          this.cameraMount = document.getElementById('camera-mount');
-          this.characterVisual = document.getElementById('character-visual');
-          this.sceneEl.addEventListener('enter-vr', () => {
-            this.isVR = true;
-            this.cameraMount.setAttribute('position', '0 1.6 0');
-            this.characterVisual.setAttribute('visible', false);
-          });
-          this.sceneEl.addEventListener('exit-vr', () => {
-            this.isVR = false;
-            this.cameraMount.setAttribute('position', '0 1.45 3.8');
-            this.characterVisual.setAttribute('visible', true);
-          });
-
-          window.addEventListener('keydown', (event) => {
-            this.keys[event.code] = true;
-          });
-          window.addEventListener('keyup', (event) => {
-            this.keys[event.code] = false;
-          });
-        },
-
-        getCombinedInput: function () {
-          let x = window.questLandscapeInput.moveX || 0;
-          let y = window.questLandscapeInput.moveY || 0;
-
-          if (this.keys['KeyA'] || this.keys['ArrowLeft']) x -= 1;
-          if (this.keys['KeyD'] || this.keys['ArrowRight']) x += 1;
-          if (this.keys['KeyW'] || this.keys['ArrowUp']) y += 1;
-          if (this.keys['KeyS'] || this.keys['ArrowDown']) y -= 1;
-
-          const length = Math.hypot(x, y);
-          if (length > 1) {
-            x /= length;
-            y /= length;
-          }
-
-          return { x, y, active: length > 0.01 };
-        },
-
-        tick: function (_time, deltaMs) {
-          const delta = Math.min(deltaMs / 1000, 0.05);
-          const input = this.getCombinedInput();
-          if (!input.active) return;
-
-          const camera = document.getElementById('player-camera');
-          const playerObject = this.el.object3D;
-          const playerRotationY = playerObject.rotation.y;
-          const cameraRotationY = camera.object3D.rotation.y;
-          const yaw = playerRotationY + cameraRotationY;
-          const forwardX = -Math.sin(yaw);
-          const forwardZ = -Math.cos(yaw);
-          const rightX = Math.cos(yaw);
-          const rightZ = -Math.sin(yaw);
-
-          const moveX = rightX * input.x + forwardX * input.y;
-          const moveZ = rightZ * input.x + forwardZ * input.y;
-          const moveLength = Math.hypot(moveX, moveZ) || 1;
-          const nx = moveX / moveLength;
-          const nz = moveZ / moveLength;
-
-          const nextX = playerObject.position.x + nx * this.data.speed * delta;
-          const nextZ = playerObject.position.z + nz * this.data.speed * delta;
-          playerObject.position.set(nextX, playerObject.position.y, nextZ);
-          this.el.setAttribute('position', {
-            x: nextX,
-            y: playerObject.position.y,
-            z: nextZ
-          });
-
-          if (!this.isVR) {
-            const targetYaw = Math.atan2(nx, nz);
-            const currentYaw = this.characterVisual.object3D.rotation.y;
-            const wrapped = Math.atan2(Math.sin(targetYaw - currentYaw), Math.cos(targetYaw - currentYaw));
-            this.characterVisual.object3D.rotation.y = currentYaw + wrapped * Math.min(1, this.data.turnSmoothing * delta);
-          }
-        }
-      });
 
       document.addEventListener('DOMContentLoaded', () => {
         const zone = document.getElementById('joystick-zone');
@@ -212,6 +126,24 @@
         let lastLookX = 0;
         let lastLookY = 0;
         let pitch = 0;
+        let isVR = false;
+        let lastFrameTime = performance.now();
+
+        window.questLandscapeKeys = { left: false, right: false, up: false, down: false };
+
+        window.addEventListener('keydown', (event) => {
+          if (event.code === 'KeyA' || event.code === 'ArrowLeft') window.questLandscapeKeys.left = true;
+          if (event.code === 'KeyD' || event.code === 'ArrowRight') window.questLandscapeKeys.right = true;
+          if (event.code === 'KeyW' || event.code === 'ArrowUp') window.questLandscapeKeys.up = true;
+          if (event.code === 'KeyS' || event.code === 'ArrowDown') window.questLandscapeKeys.down = true;
+        });
+
+        window.addEventListener('keyup', (event) => {
+          if (event.code === 'KeyA' || event.code === 'ArrowLeft') window.questLandscapeKeys.left = false;
+          if (event.code === 'KeyD' || event.code === 'ArrowRight') window.questLandscapeKeys.right = false;
+          if (event.code === 'KeyW' || event.code === 'ArrowUp') window.questLandscapeKeys.up = false;
+          if (event.code === 'KeyS' || event.code === 'ArrowDown') window.questLandscapeKeys.down = false;
+        });
 
         function setJoystick(x, y, source = 'unknown') {
           knob.style.transform = `translate(${x}px, ${y}px)`;
@@ -360,12 +292,67 @@
           releaseLook();
         }, { passive: false });
 
+        function updateMovement(now) {
+          const delta = Math.min((now - lastFrameTime) / 1000, 0.05);
+          lastFrameTime = now;
+
+          const inputX = window.questLandscapeInput.moveX || 0;
+          const inputY = window.questLandscapeInput.moveY || 0;
+          let keyX = 0;
+          let keyY = 0;
+          if (window.questLandscapeKeys?.left) keyX -= 1;
+          if (window.questLandscapeKeys?.right) keyX += 1;
+          if (window.questLandscapeKeys?.up) keyY += 1;
+          if (window.questLandscapeKeys?.down) keyY -= 1;
+
+          let x = inputX + keyX;
+          let y = inputY + keyY;
+          const length = Math.hypot(x, y);
+          if (length > 1) {
+            x /= length;
+            y /= length;
+          }
+
+          if (length > 0.02) {
+            const playerObj = player.object3D;
+            const cameraYaw = camera.object3D.rotation.y;
+            const worldYaw = playerObj.rotation.y + cameraYaw;
+            const forwardX = -Math.sin(worldYaw);
+            const forwardZ = -Math.cos(worldYaw);
+            const rightX = Math.cos(worldYaw);
+            const rightZ = -Math.sin(worldYaw);
+
+            const moveX = rightX * x + forwardX * y;
+            const moveZ = rightZ * x + forwardZ * y;
+            const moveLen = Math.hypot(moveX, moveZ) || 1;
+            const nx = moveX / moveLen;
+            const nz = moveZ / moveLen;
+            const speed = 3.6;
+            const nextX = playerObj.position.x + nx * speed * delta;
+            const nextZ = playerObj.position.z + nz * speed * delta;
+
+            playerObj.position.set(nextX, playerObj.position.y, nextZ);
+            player.setAttribute('position', { x: nextX, y: playerObj.position.y, z: nextZ });
+
+            if (!isVR) {
+              const characterVisual = document.getElementById('character-visual');
+              const targetYaw = Math.atan2(nx, nz);
+              const currentYaw = characterVisual.object3D.rotation.y;
+              const wrapped = Math.atan2(Math.sin(targetYaw - currentYaw), Math.cos(targetYaw - currentYaw));
+              characterVisual.object3D.rotation.y = currentYaw + wrapped * Math.min(1, 10 * delta);
+            }
+          }
+
+          requestAnimationFrame(updateMovement);
+        }
+
         function updateDebug() {
           const pos = player.object3D.position;
           const input = window.questLandscapeInput;
           const moving = Math.hypot(input.moveX, input.moveY) > 0.02 ? 'yes' : 'no';
           debugPanel.textContent = [
             `src: ${input.source}`,
+            `raf: alive`,
             `touching: ${input.touching ? 'yes' : 'no'}`,
             `moveX: ${input.moveX.toFixed(2)}`,
             `moveY: ${input.moveY.toFixed(2)}`,
@@ -375,14 +362,21 @@
           requestAnimationFrame(updateDebug);
         }
 
+        requestAnimationFrame(updateMovement);
         updateDebug();
 
         scene.addEventListener('enter-vr', () => {
+          isVR = true;
           document.getElementById('hud').classList.add('hidden');
+          document.getElementById('camera-mount').setAttribute('position', '0 1.6 0');
+          document.getElementById('character-visual').setAttribute('visible', false);
         });
 
         scene.addEventListener('exit-vr', () => {
+          isVR = false;
           document.getElementById('hud').classList.remove('hidden');
+          document.getElementById('camera-mount').setAttribute('position', '0 1.45 3.8');
+          document.getElementById('character-visual').setAttribute('visible', true);
           camera.object3D.rotation.x = 0;
           pitch = 0;
           instructions.textContent = 'Drag right side to look · Use joystick to move · Tap the VR button for Quest';
@@ -424,7 +418,7 @@
         <a-sphere position="0 4.2 0" radius="0.95" color="#2e7d32" shadow="cast: true"></a-sphere>
       </a-entity>
 
-      <a-entity id="player" position="0 0 5" player-controller>
+      <a-entity id="player" position="0 0 5">
         <a-entity id="character-visual" position="0 0 0">
           <a-cylinder position="0 0.55 0" radius="0.28" height="1.1" color="#3f51b5" shadow="cast: true"></a-cylinder>
           <a-sphere position="0 1.38 0" radius="0.24" color="#ffcc80" shadow="cast: true"></a-sphere>
