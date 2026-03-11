@@ -1,17 +1,17 @@
 # Quest Landscape
 
-A lightweight A-Frame / WebXR landscape demo that now supports a proper controllable player.
+A lightweight A-Frame / WebXR landscape demo with a controllable character for phone and Meta Quest.
 
-## Features
+## Current Features
 
-- Third-person character on phones and desktop
-- Simulated on-screen thumbstick for movement on touch devices
-- Right-side drag look control on phones
+- Third-person movement on phones and desktop
+- On-screen thumbstick for touch movement
+- Right-side drag look on phones
 - Keyboard movement on desktop (`WASD` / arrow keys)
-- Meta Quest / WebXR support through the browser VR button
-- Automatic camera switch:
-  - non-VR: third-person follow camera
-  - VR: first-person head camera
+- WebXR / Meta Quest browser support
+- Real 3D character model (`RobotExpressive.glb`)
+- Simple world collision and map boundaries
+- Ground clamping so the player stays on the terrain plane
 
 ## Controls
 
@@ -21,11 +21,15 @@ A lightweight A-Frame / WebXR landscape demo that now supports a proper controll
 
 ### Desktop
 - **Move:** `WASD` or arrow keys
-- **Look:** mouse drag / mouse look
+- **Look:** mouse / drag
 
 ### Meta Quest
 - Open in Quest Browser and tap the **VR** button
-- In immersive mode, the camera switches to first-person
+- In immersive mode the camera switches to first-person
+
+## Collision / Boundaries
+
+The player is constrained to a bounded grove and cannot walk through the major trees / rocks placed in the scene.
 
 ## Local Development
 
@@ -33,15 +37,12 @@ A lightweight A-Frame / WebXR landscape demo that now supports a proper controll
 npx serve
 ```
 
-Then open the local URL in a browser, or from another device on the same network.
-
-## Deployment
-
-This repo is set up to work well with GitHub Pages as a static site.
+Then open the URL locally or from another device on the same network.
 
 ## Next Good Upgrades
 
-- Replace the placeholder character with a GLB avatar
-- Add animation states (idle / walk)
-- Add collision and terrain constraints
-- Map Quest thumbstick/controller input to locomotion in immersive mode
+- Character animation state switching (idle / walk)
+- Quest controller locomotion in immersive mode
+- Better terrain / elevation
+- Replace CDN-hosted model with a local asset in the repo
+- Native Android / Quest wrapper packaging polish
