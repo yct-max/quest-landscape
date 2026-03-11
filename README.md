@@ -1,35 +1,47 @@
-# VR Landscape for Meta Quest
+# Quest Landscape
 
-A simple VR app showing a forest landscape with trees, built with A-Frame (WebXR).
+A lightweight A-Frame / WebXR landscape demo that now supports a proper controllable player.
 
-## How to Run
+## Features
 
-### Option 1: Quick - Run in Quest Browser
-1. Host this somewhere (GitHub Pages, Netlify, Vercel, etc.)
-2. Open the Meta Quest Browser
-3. Navigate to your hosted URL
-4. Click the VR button in the bottom-right to enter immersive mode
-
-### Option 2: Local Development
-1. Install Node.js
-2. Run `npx serve` in this directory
-3. Access via your computer's IP on the same network
-4. Or use Quest's developer mode with `adb reverse`
+- Third-person character on phones and desktop
+- Simulated on-screen thumbstick for movement on touch devices
+- Right-side drag look control on phones
+- Keyboard movement on desktop (`WASD` / arrow keys)
+- Meta Quest / WebXR support through the browser VR button
+- Automatic camera switch:
+  - non-VR: third-person follow camera
+  - VR: first-person head camera
 
 ## Controls
 
-- **Move:** WASD keys (desktop) / Thumbstick (VR)
-- **Look:** Mouse drag (desktop) / Head movement (VR)
-- **Enter VR:** Click the VR button in bottom-right corner
+### Phone
+- **Left thumb:** movement joystick
+- **Right side drag:** rotate camera / look around
 
-## Tech Stack
+### Desktop
+- **Move:** `WASD` or arrow keys
+- **Look:** mouse drag / mouse look
 
-- [A-Frame](https://aframe.io/) - WebXR framework
-- [A-Frame Environment Component](https://github.com/c-frame/aframe-environment-component) - Procedural environments
+### Meta Quest
+- Open in Quest Browser and tap the **VR** button
+- In immersive mode, the camera switches to first-person
 
-## Customization
+## Local Development
 
-Edit `index.html` to change:
-- Tree positions, sizes, colors
-- Environment preset (try: `arches`, `yavapai`, `osiris`, `poison`)
-- Lighting and sky settings
+```bash
+npx serve
+```
+
+Then open the local URL in a browser, or from another device on the same network.
+
+## Deployment
+
+This repo is set up to work well with GitHub Pages as a static site.
+
+## Next Good Upgrades
+
+- Replace the placeholder character with a GLB avatar
+- Add animation states (idle / walk)
+- Add collision and terrain constraints
+- Map Quest thumbstick/controller input to locomotion in immersive mode
