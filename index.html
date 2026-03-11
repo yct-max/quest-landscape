@@ -92,6 +92,8 @@
       }
     </style>
     <script>
+      window.questLandscapeInput = { moveX: 0, moveY: 0 };
+
       AFRAME.registerComponent('player-controller', {
         schema: {
           speed: { default: 3.6 },
@@ -99,7 +101,6 @@
         },
 
         init: function () {
-          this.moveInput = { x: 0, y: 0 };
           this.keys = {};
           this.isVR = false;
           this.cameraMount = document.getElementById('camera-mount');
@@ -123,14 +124,9 @@
           });
         },
 
-        setMoveInput: function (x, y) {
-          this.moveInput.x = x;
-          this.moveInput.y = y;
-        },
-
         getCombinedInput: function () {
-          let x = this.moveInput.x;
-          let y = this.moveInput.y;
+          let x = window.questLandscapeInput.moveX || 0;
+          let y = window.questLandscapeInput.moveY || 0;
 
           if (this.keys['KeyA'] || this.keys['ArrowLeft']) x -= 1;
           if (this.keys['KeyD'] || this.keys['ArrowRight']) x += 1;
@@ -184,8 +180,6 @@
         const player = document.getElementById('player');
         const camera = document.getElementById('player-camera');
         const instructions = document.getElementById('instructions');
-        const controller = () => player.components['player-controller'];
-
         const radius = 48;
         let joystickPointerId = null;
         let lookPointerId = null;
@@ -196,12 +190,14 @@
 
         function setJoystick(x, y) {
           knob.style.transform = `translate(${x}px, ${y}px)`;
-          if (controller()) controller().setMoveInput(x / radius, -y / radius);
+          window.questLandscapeInput.moveX = x / radius;
+          window.questLandscapeInput.moveY = -y / radius;
         }
 
         function resetJoystick() {
           knob.style.transform = 'translate(0px, 0px)';
-          if (controller()) controller().setMoveInput(0, 0);
+          window.questLandscapeInput.moveX = 0;
+          window.questLandscapeInput.moveY = 0;
         }
 
         function updateJoystickFromEvent(event) {
