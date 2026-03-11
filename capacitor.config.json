@@ -1,0 +1,8 @@
+{
+  "appId": "ai.openclaw.questlandscape",
+  "appName": "Quest Landscape",
+  "webDir": "app",
+  "server": {
+    "androidScheme": "https"
+  }
+}

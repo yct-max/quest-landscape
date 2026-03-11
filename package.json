@@ -1,0 +1,28 @@
+{
+  "name": "quest-landscape",
+  "version": "1.0.0",
+  "description": "A lightweight A-Frame / WebXR landscape demo with a controllable character for phone and Meta Quest.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "sync:android": "mkdir -p app && cp index.html app/index.html && npx cap sync android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yct-max/quest-landscape.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yct-max/quest-landscape/issues"
+  },
+  "homepage": "https://github.com/yct-max/quest-landscape#readme",
+  "devDependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0"
+  },
+  "private": true
+}
